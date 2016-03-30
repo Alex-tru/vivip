@@ -110,7 +110,7 @@ class uvinumSpider(scrapy.Spider):
               }) 
         
         
-
+#nada
     
     def parseURL(self, response):
         
