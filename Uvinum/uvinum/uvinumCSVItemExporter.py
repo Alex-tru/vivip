@@ -6,6 +6,8 @@ from scrapy.exporters import CsvItemExporter
 class uvinumCSVItemExporter(CsvItemExporter):
 
     
+    
+    
     def __init__(self, *a, **kw):
             kw['delimiter'] = ';'
             super(uvinumCSVItemExporter, self).__init__(*a, **kw)
