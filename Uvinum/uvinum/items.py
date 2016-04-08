@@ -20,5 +20,11 @@ class UvinumItem(scrapy.Item):
     anada = scrapy.Field()
     tipo = scrapy.Field()
     puntuacion = scrapy.Field()
+    do = scrapy.Field()
+    volumen = scrapy.Field()
+    tipouvas = scrapy.Field()
+    alcohol = scrapy.Field()
+    alergenos = scrapy.Field()
+    notadecata = scrapy.Field()
     
     

@@ -75,11 +75,17 @@ class uvinumSpider(scrapy.Spider):
         #          'handle_httpstatus_list': [301]
         #      })
         
-        url_to_scrap = "http://www.uvinum.es/vinos:k:vino-navarra:v:todos:y:1998:t:tinto"
-        yield scrapy.Request(url_to_scrap, callback=self.parseDO,meta = {
+        #url_to_scrap = "http://www.uvinum.es/vinos:k:vino-navarra:v:todos:y:1998:t:tinto"
+        #yield scrapy.Request(url_to_scrap, callback=self.parseDO,meta = {
+        #          'dont_redirect': True,
+        #          'handle_httpstatus_list': [301]
+        #      })
+        
+        url_to_scrap = "http://www.uvinum.es/vino-navarra/dignus-1998"
+        yield scrapy.Request(url_to_scrap, callback=self.parseURL2,meta = {
                   'dont_redirect': True,
                   'handle_httpstatus_list': [301]
-              })
+              }, dont_filter=True) 
                 
       
     def parseDO(self, response):
@@ -126,7 +132,7 @@ class uvinumSpider(scrapy.Spider):
         
 
             
-        self.logger.info('** Init parseURL %s **',response.url)    
+        self.logger.info('** Init parseURL1 %s **',response.url)    
             
         hxs = Selector(response)
         products = hxs.xpath('//li[@class="data-product result result-with-button"]')
@@ -147,4 +153,23 @@ class uvinumSpider(scrapy.Spider):
             #item['cellar'] = item['cellar'].encode('utf-8')
             items.append(item)
         return items
+    
+    def parseURL2(self, response):
+        
+        self.logger.info('** Init parseURL2 %s **',response.url)    
+            
+        item = UvinumItem()
+        item['name'] = response.xpath('normalize-space(.//*[@class="url"]/strong/text())').extract()
+        item['anada'] = response.xpath('normalize-space(.//*[@class="anadas"]/strong)').extract()
+        item['cellar'] = response.xpath('normalize-space(.//*[@itemprop="name"]/text())').extract()
+        item['do'] = response.xpath('normalize-space(.//*[@class="attribute"]/a/text())').extract()
+        item['tipo'] = response.xpath('normalize-space(.//*[@class="wine-type"]/dd/text())').extract()
+        item['volumen'] = response.xpath('normalize-space(.//*[@class="tamanos"]/strong/text())').extract()
+        item['tipouvas'] = response.xpath('normalize-space(.//*[@itemprop="description"]/br/text())').extract()
+        item['alergenos'] = response.xpath('normalize-space(.//*[@class="attributes-box-right"]/dd/text())').extract()
+        item['precio'] = response.xpath('normalize-space(.//*[@class="price"]/text())').extract()
+        item['store'] = response.xpath('normalize-space(.//*[@class="shipping_info"]/span/a/strong/text())').extract()
+        item['puntuacion'] = response.xpath('normalize-space(.//*[@class="nota"]/strong)').extract()
+            
+        return item
             
