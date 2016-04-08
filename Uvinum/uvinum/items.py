@@ -17,4 +17,8 @@ class UvinumItem(scrapy.Item):
     name = scrapy.Field()
     source = scrapy.Field()
     precio = scrapy.Field()
+    anada = scrapy.Field()
+    tipo = scrapy.Field()
+    puntuacion = scrapy.Field()
+    
     

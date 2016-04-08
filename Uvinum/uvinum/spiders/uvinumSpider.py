@@ -53,20 +53,30 @@ class uvinumSpider(scrapy.Spider):
         
         self.logger.info('** Init parse **')
         #urls = response.xpath('//div[@class="region"]/ul/li/a/@href').extract()
-        urls = ['vino-rioja','vino-navarra']
         
-        for url in urls:
         
-            _url = url.split('/')
-            do_name = _url[len(_url)-1]
-            self.logger.debug('** DO %s **',do_name)
-                    
-            do_to_scrap = "http://www.uvinum.es/vinos:k:"+do_name+":v:todos"
-                    
-            for types in self.wine_types:
-                for years in self.wine_year:
-                    url_to_scrap = do_to_scrap + ":" + years + ":" + types
-                    yield scrapy.Request(url_to_scrap, callback=self.parseDO,meta = {
+        
+        
+        #urls = ['vino-rioja','vino-navarra']
+        
+        #for url in urls:
+        #
+        #    _url = url.split('/')
+        #    do_name = _url[len(_url)-1]
+        #    self.logger.debug('** DO %s **',do_name)
+        #            
+        #    do_to_scrap = "http://www.uvinum.es/vinos:k:"+do_name+":v:todos"
+        #            
+        #    for types in self.wine_types:
+        #        for years in self.wine_year:
+        #            url_to_scrap = do_to_scrap + ":" + years + ":" + types
+        #            yield scrapy.Request(url_to_scrap, callback=self.parseDO,meta = {
+        #          'dont_redirect': True,
+        #          'handle_httpstatus_list': [301]
+        #      })
+        
+        url_to_scrap = "http://www.uvinum.es/vinos:k:vino-navarra:v:todos:y:1998:t:tinto"
+        yield scrapy.Request(url_to_scrap, callback=self.parseDO,meta = {
                   'dont_redirect': True,
                   'handle_httpstatus_list': [301]
               })
@@ -107,7 +117,7 @@ class uvinumSpider(scrapy.Spider):
             yield scrapy.Request(response.url, callback=self.parseURL,meta = {
                   'dont_redirect': True,
                   'handle_httpstatus_list': [301]
-              }) 
+              }, dont_filter=True) 
         
         
 #nada
@@ -121,6 +131,7 @@ class uvinumSpider(scrapy.Spider):
         hxs = Selector(response)
         products = hxs.xpath('//li[@class="data-product result result-with-button"]')
         #products = hxs.xpath('///html/body/div[2]/div[3]/div[3]/div[3]/div[2]/ul/li[2]')
+        products = products + hxs.xpath('//li[@class="data-product result"]')
         
         items = []
         for product in products:
@@ -130,8 +141,8 @@ class uvinumSpider(scrapy.Spider):
             item['category'] = product.xpath('@data-category').extract()
             item['name'] = product.xpath('@data-name').extract()
             item['source'] = product.xpath('@data-store').extract()
-            item['precio'] = product.xpath('//div[@product]/div[@content_price]/p').extract()
-            
+            item['precio'] = product.xpath('normalize-space(.//*[@class="precio"]/text())').extract()
+            item['puntuacion'] = product.xpath('normalize-space(.//*[@class="nota"]/strong)').extract()
             
             #item['cellar'] = item['cellar'].encode('utf-8')
             items.append(item)
