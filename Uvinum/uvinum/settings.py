@@ -17,13 +17,12 @@ NEWSPIDER_MODULE = 'uvinum.spiders'
 
 # Configure CSV export
 
-#FEED_EXPORTERS = {
-#    'mycsv': 'uvinum.uvinumCSVItemExporter',
-#}
+FEED_EXPORTERS = {
+    'mycsv': 'uvinum.uvinumCSVItemExporter',
+}
 
 FIELDS_TO_EXPORT = [
-    'cellar',
-    'store'
+    'name'
 ]
 
 CSV_DELIMITER = "\t" # For tab
@@ -32,25 +31,25 @@ CSV_DELIMITER = "\t" # For tab
 # Logging configuration. Minimum level to log. Available levels
 # are: CRITICAL, ERROR, WARNING, INFO, DEBUG. For more info see Logging.
 
-LOG_LEVEL = "DEBUG"
+LOG_LEVEL = "INFO"
 #LOG_FILE = "C:/work/Uvinum/uvinum.log"
 LOG_ENCODING = "utf-8"
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'uvinum (+http://www.yourdomain.com)'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS=5
+#CONCURRENT_REQUESTS=5
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY=3
+DOWNLOAD_DELAY=2
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN=16
 #CONCURRENT_REQUESTS_PER_IP=16
 
-# Disable cookies (enabled by default)
+#Disable cookies (enabled by default)
 #COOKIES_ENABLED=False
 
 # Disable Telnet Console (enabled by default)
@@ -70,9 +69,9 @@ CONCURRENT_REQUESTS=5
 
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'uvinum.middlewares.MyCustomDownloaderMiddleware': 543,
-#}
+# DOWNLOADER_MIDDLEWARES = {
+#     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 1,
+# }
 
 # Enable or disable extensions
 # See http://scrapy.readthedocs.org/en/latest/topics/extensions.html
