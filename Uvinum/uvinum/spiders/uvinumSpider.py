@@ -15,10 +15,7 @@ class uvinumSpider(scrapy.Spider):
     name = "uvinum"
     allowed_domains = ["uvinum.es"]  
     
-    #url donde empieza a buscar
-    start_urls = [
-        "http://webcache.googleusercontent.com/search?q=cache:http://www.uvinum.es/denominaciones"
-    ]
+    
     
     proxy_pool = [
         "http://50.16.130.96:80",
@@ -56,9 +53,12 @@ class uvinumSpider(scrapy.Spider):
         "http://117.135.250.133:8083"
     ]
     
-    #os.environ['http_proxy']=proxy_pool[random.randint(0,len(proxy_pool)-1)]
-    
-    #como se que tipos son validos para cada subregion?
+    os.environ['http_proxy']=proxy_pool[random.randint(0,len(proxy_pool)-1)]
+    #url donde empieza a buscar
+    start_urls = [
+        "http://www.uvinum.es/denominaciones"
+    ]
+
 #     wine_types = [
 #         "t:tinto",
 #         "t:blanco",
@@ -69,7 +69,6 @@ class uvinumSpider(scrapy.Spider):
 #         "t:sin-alcohol"
 #     ]
     
-    #pero como se que años son para cada subregion?
 #     wine_year = [
 #         "y:1997",
 #         "y:1998",
@@ -105,7 +104,7 @@ class uvinumSpider(scrapy.Spider):
         #urls = ['vino-rioja','vino-navarra']
         
         #hacer requests para las url de la lista de vinos con los filtros para cada region
-        for url in region_urls:#iterando sobre las regiones
+        for url in region_urls[120:121]:#iterando sobre las regiones
             os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]   
             region = str(url)[21:]#cortar de cada url el nombre de la region
             #self.logger.debug('** Region %s **',region)
@@ -149,7 +148,8 @@ class uvinumSpider(scrapy.Spider):
         
         for year_url in year_urls:
             os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
-            yield scrapy.Request(year_url, callback=self.parseYear)
+            if year_url!="#":# a veces en las url que coge hay un #, con este if evitamos que salte el error
+                yield scrapy.Request(year_url, callback=self.parseYear)
         
 #         #crear lista con los años que hay y añadir el filtro de año a la url con filtro de tipo y region
 #         for year_url in year_urls:
@@ -170,7 +170,8 @@ class uvinumSpider(scrapy.Spider):
         
         for type_url in type_urls:
             os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
-            yield scrapy.Request(type_url, callback=self.parseType, meta = {
+            if type_url!="#":
+                yield scrapy.Request(type_url, callback=self.parseType, meta = {
                         'dont_redirect': True,
                         'handle_httpstatus_list': [301]
                     })
@@ -194,8 +195,10 @@ class uvinumSpider(scrapy.Spider):
         #request individual para cada vino
         for wine_url in wine_urls:
             #os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
-            wine_url = "http://webcache.googleusercontent.com/search?q=cache:" + wine_url
-            yield scrapy.Request(wine_url, callback=self.parseDATA, meta = {
+            #wine_url = "http://webcache.googleusercontent.com/search?q=cache:" + wine_url
+            
+            if wine_url!="#":
+                yield scrapy.Request(wine_url, callback=self.parseDATA, meta = {
                     'dont_redirect': True,
                     'handle_httpstatus_list': [301]
                 })
@@ -207,10 +210,11 @@ class uvinumSpider(scrapy.Spider):
                 page_url = first_page + str(x+2)
                 #hacer la request para la url de esa pagina
                 os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
-                yield scrapy.Request(page_url, callback=self.parseType_extraPage, meta = {
-                    'dont_redirect': True,
-                    'handle_httpstatus_list': [301]
-                })
+                if page_url!="#":
+                    yield scrapy.Request(page_url, callback=self.parseType_extraPage, meta = {
+                        'dont_redirect': True,
+                        'handle_httpstatus_list': [301]
+                        })
                 
     def parseType_extraPage(self, response):    
         """parse para las siguientes paginas con filtro de año, region y tipo; en caso de haber mas de una."""  
@@ -221,8 +225,9 @@ class uvinumSpider(scrapy.Spider):
         #request individual para cada vino
         for wine_url in wine_urls:
             #os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
-            wine_url = "http://webcache.googleusercontent.com/search?q=cache:" + wine_url
-            yield scrapy.Request(wine_url, callback=self.parseDATA, meta = {
+            #wine_url = "http://webcache.googleusercontent.com/search?q=cache:" + wine_url
+            if wine_url!="#":
+                yield scrapy.Request(wine_url, callback=self.parseDATA, meta = {
                     'dont_redirect': True,
                     'handle_httpstatus_list': [301]
                 })
@@ -235,6 +240,33 @@ class uvinumSpider(scrapy.Spider):
         wine['name'] = response.xpath('//div[@class="product-title"]/h1/@title').extract()
         product = response.xpath('//div[@class="attributes-container"]')
         wine['cellar'] = product.xpath('.//a[@class="bodegas"]/@title').extract()
+        wine['tipo'] = product.xpath('.//dl[@class="wine-type"]/dd/strong/text()').extract()
+        wine['anada'] = product.xpath('.//dd[@class="anadas"]/strong/text()').extract()
+        wine['DO'] = product.xpath('.//dl[@class="appellation"]/dd/a/text()').extract_first()
+        wine['volumen'] = product.xpath('.//dd[@class="tamanos"]/strong/text()').extract()
+        #wine['alergenos'] = #no se puede buscar por nombre porque la etiqueta es Alérgenos, y no se aceptan acentos en xpath
+        wine['precio'] = response.xpath('//span[@itemprop="price"]/text()').extract_first()
+        wine['tipouvas'] = product.xpath('//p[@itemprop="description"]').extract()
+#         if wine['tipouvas']!=[]:
+#             if "UVAS" in wine['tipouvas'][0]:
+#                 wine['tipouvas'] = wine['tipouvas'][0].split('UVAS')[1].split('BODEGA')[0]
+#             else: #si no lo podemos sacar de la descripcion
+#                 wine['tipouvas'] = product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract()
+#         else: wine['tipouvas'] = product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract()
+        wine['tipouvas'] = product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract()
+        wine['alcohol'] = product.xpath('.//dt[@title="Vol. de alcohol"]/../dd/text()').extract()
+        wine['puntuacionrp'] = product.xpath('//dd[@class="guides"]/span[@class="guia_pk guide"]/text()').extract()
+        wine['puntuacionws'] = product.xpath('//dd[@class="guides"]/span[@class="guia_ws guide"]/text()').extract()
+        wine['puntuacionrvf'] = product.xpath('//dd[@class="guides"]/span[@class="guia_larvf guide"]/text()').extract()
+        wine['puntuaciongp'] = product.xpath('//dd[@class="guides"]/span[@class="guia_p guide"]/text()').extract()
+        wine['notausuarios'] = response.xpath('//div[@class="nota"]/p/strong[@itemprop="ratingValue"]/text()').extract()
+        wine['notadecata'] = product.xpath('//p[@itemprop="description"]').extract()[0]
+        #para recortar la nota de cata:
+        if "BODEGA" in wine['notadecata']:
+            wine['notadecata'] = wine['notadecata'].split("BODEGA")[0]
+        if "UVAS" in wine['notadecata']:
+            wine['notadecata'] = wine['notadecata'].split("UVAS")[0]
+        
         #...Añadir
         return wine
     
