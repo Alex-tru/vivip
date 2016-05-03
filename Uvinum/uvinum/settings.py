@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from scrapy.settings.default_settings import LOG_LEVEL, LOG_FILE
+from scrapy.settings.default_settings import LOG_LEVEL, LOG_FILE, FEED_FORMAT,\
+    FEED_EXPORT_FIELDS, FEED_URI
 
 # Scrapy settings for uvinum project
 #
@@ -17,15 +18,19 @@ NEWSPIDER_MODULE = 'uvinum.spiders'
 
 # Configure CSV export
 
-FEED_EXPORTERS = {
-    'mycsv': 'uvinum.uvinumCSVItemExporter',
-}
+FEED_FORMAT = 'csv'
 
-FIELDS_TO_EXPORT = [
-    'name'
-]
+FEED_URI = 'file://wines.csv'
 
-CSV_DELIMITER = "\t" # For tab
+#FEED_EXPORTERS = {
+#    'mycsv': 'uvinum.uvinumCSVItemExporter',
+#}
+
+#FIELDS_TO_EXPORT = [
+#    'name'
+#]
+
+#CSV_DELIMITER = "\t" # For tab
 
 
 # Logging configuration. Minimum level to log. Available levels
