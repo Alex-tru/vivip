@@ -18,19 +18,21 @@ NEWSPIDER_MODULE = 'uvinum.spiders'
 
 # Configure CSV export
 
+#FEED_EXPORTERS = {
+#    'csv': 'uvinum.uvinumCSVItemExporter',
+#}
+
 FEED_FORMAT = 'csv'
 
-FEED_URI = 'file://wines.csv'
+FEED_URI = 'file://c:/work/git/Uvinum/uvinum/wines.csv'
 
-#FEED_EXPORTERS = {
-#    'mycsv': 'uvinum.uvinumCSVItemExporter',
-#}
+
 
 #FIELDS_TO_EXPORT = [
 #    'name'
 #]
 
-#CSV_DELIMITER = "\t" # For tab
+CSV_DELIMITER = ";" #
 
 
 # Logging configuration. Minimum level to log. Available levels
