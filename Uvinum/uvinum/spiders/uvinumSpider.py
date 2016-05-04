@@ -15,8 +15,6 @@ class uvinumSpider(scrapy.Spider):
     name = "uvinum"
     allowed_domains = ["uvinum.es"]  
     
-    
-    
     proxy_pool = [
         "http://50.16.130.96:80",
         "http://107.163.117.234:808",
@@ -104,7 +102,7 @@ class uvinumSpider(scrapy.Spider):
         #urls = ['vino-rioja','vino-navarra']
         
         #hacer requests para las url de la lista de vinos con los filtros para cada region
-        for url in region_urls[120:121]:#iterando sobre las regiones
+        for url in region_urls[128:129]:#iterando sobre las regiones
             os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]   
             region = str(url)[21:]#cortar de cada url el nombre de la region
             #self.logger.debug('** Region %s **',region)
@@ -112,15 +110,6 @@ class uvinumSpider(scrapy.Spider):
             #construir la url de la lista de vinos con el filtro de la region        
             region_filter_url = "http://www.uvinum.es/vinos:k:"+region+":v:todos"
             print "I will go to", region_filter_url
-            #añadir a la url do_to_scrap filtros de anada y tipos de vino (no se puede hacer aqui porque no los sabemos)
-            #usar filter_vintage y filter_wine_type        
-#             for types in self.wine_types:
-#                 for years in self.wine_year:
-#                     total_filter_url = region_filter + ":" + years + ":" + types
-#                     yield scrapy.Request(total_filter_url, callback=self.parseDO,meta = {
-#                   'dont_redirect': True,
-#                   'handle_httpstatus_list': [301]
-#               })
         
             #requests para cada region
             yield scrapy.Request(region_filter_url, callback=self.parseRegion,meta = {
@@ -237,36 +226,63 @@ class uvinumSpider(scrapy.Spider):
         ### EN PROCESO ###
         print "I am in", response.url
         wine = UvinumItem()
-        wine['name'] = response.xpath('//div[@class="product-title"]/h1/@title').extract()
+        wine['name'] = ''.join(response.xpath('//div[@class="product-title"]/h1/@title').extract())
         product = response.xpath('//div[@class="attributes-container"]')
-        wine['cellar'] = product.xpath('.//a[@class="bodegas"]/@title').extract()
-        wine['tipo'] = product.xpath('.//dl[@class="wine-type"]/dd/strong/text()').extract()
-        wine['anada'] = product.xpath('.//dd[@class="anadas"]/strong/text()').extract()
-        wine['DO'] = product.xpath('.//dl[@class="appellation"]/dd/a/text()').extract_first()
-        wine['volumen'] = product.xpath('.//dd[@class="tamanos"]/strong/text()').extract()
-        #wine['alergenos'] = #no se puede buscar por nombre porque la etiqueta es Alérgenos, y no se aceptan acentos en xpath
+        wine['cellar'] = ''.join(product.xpath('.//a[@class="bodegas"]/@title').extract())
+        wine['tipo'] = ''.join(product.xpath('.//dl[@class="wine-type"]/dd/strong/text()').extract())
+        wine['anada'] = ''.join(product.xpath('.//dd[@class="anadas"]/strong/text()').extract())
+        wine['DO'] = ''.join(product.xpath('.//dl[@class="appellation"]/dd/a/text()').extract_first())
+        wine['volumen'] = ''.join(product.xpath('.//dd[@class="tamanos"]/strong/text()').extract())
+        #para evitar el problema del acento en alérgenos usamos una lista de nodos con condición de que lo que se
+        #extraiga del nodo contenga "genos" y por lo tanto sea Alérgenos
+        wine['alergenos'] = [x for x in product.xpath('.//dl') if "genos" in x.extract()][0].xpath('.//dd/text()').extract()
         wine['precio'] = response.xpath('//span[@itemprop="price"]/text()').extract_first()
-        wine['tipouvas'] = product.xpath('//p[@itemprop="description"]').extract()
+#        wine['tipouvas'] = product.xpath('//p[@itemprop="description"]').extract()
 #         if wine['tipouvas']!=[]:
 #             if "UVAS" in wine['tipouvas'][0]:
 #                 wine['tipouvas'] = wine['tipouvas'][0].split('UVAS')[1].split('BODEGA')[0]
 #             else: #si no lo podemos sacar de la descripcion
 #                 wine['tipouvas'] = product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract()
 #         else: wine['tipouvas'] = product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract()
-        wine['tipouvas'] = product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract()
-        wine['alcohol'] = product.xpath('.//dt[@title="Vol. de alcohol"]/../dd/text()').extract()
-        wine['puntuacionrp'] = product.xpath('//dd[@class="guides"]/span[@class="guia_pk guide"]/text()').extract()
-        wine['puntuacionws'] = product.xpath('//dd[@class="guides"]/span[@class="guia_ws guide"]/text()').extract()
-        wine['puntuacionrvf'] = product.xpath('//dd[@class="guides"]/span[@class="guia_larvf guide"]/text()').extract()
-        wine['puntuaciongp'] = product.xpath('//dd[@class="guides"]/span[@class="guia_p guide"]/text()').extract()
-        wine['notausuarios'] = response.xpath('//div[@class="nota"]/p/strong[@itemprop="ratingValue"]/text()').extract()
-        wine['notadecata'] = product.xpath('//p[@itemprop="description"]').extract()[0]
-        #para recortar la nota de cata:
-        if "BODEGA" in wine['notadecata']:
-            wine['notadecata'] = wine['notadecata'].split("BODEGA")[0]
-        if "UVAS" in wine['notadecata']:
-            wine['notadecata'] = wine['notadecata'].split("UVAS")[0]
+        tipouvas = ''.join(product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract())
+        graduacion = ''.join(product.xpath('.//dt[@title="Vol. de alcohol"]/../dd/text()').extract())
+        wine['puntuacionrp'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_pk guide"]/text()').extract())
+        wine['puntuacionws'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_ws guide"]/text()').extract())
+        wine['puntuacionrvf'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_larvf guide"]/text()').extract())
+        wine['puntuaciongp'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_p guide"]/text()').extract())
+        wine['notausuarios'] = ''.join(response.xpath('//div[@class="nota"]/p/strong[@itemprop="ratingValue"]/text()').extract())
+        wine['numerovotos'] = ''.join(response.xpath('//div[@class="nota"]/meta[@itemprop="reviewCount"]/@content').extract())
+        maridaje = ','.join(product.xpath('.//dl[@class="pairing"]/dd/a/strong/text()').extract())
         
+        notadecata = product.xpath('//p[@itemprop="description"]/text()').extract()
+        #procesar la nota de cata:
+        if notadecata:#los saltos de linea hacen que extract() obtenga cada parte de la nota de cata como un elemento de una lista
+            notas = [x[3:] for x in notadecata if ("Vista" in x or "Nariz" in x or "Boca" in x)]#y cogemos los elementos de la lista que queramos
+            wine['notadecata'] = ''.join(x for x in notas)
+            
+            #aprovechar la info de porcentajes de uva si la hay
+            uvas = [x[1:] for x in notadecata if "UVAS" in x]#cogemos solo la parte de uvas
+            if uvas:
+                tipouvas = ','.join(x for x in uvas).split(":")[1]
+                
+            #aprovechar la info de alcohol si la hay
+            alcohol = [x[1:] for x in notadecata if "GRADUACI" in x]#evitando el acento de graduación
+            if alcohol:
+                graduacion = ''.join(x for x in alcohol).split(":")[1]
+            #aprovechar la info de temperatura de consumo si la hay
+            tconsumo = [x[1:] for x in notadecata if "TEMPERATURA DE CONSUMO" in x]
+            if tconsumo:
+                wine['temperaturaconsumo'] = ''.join(x for x in tconsumo).split(":")[1]
+                
+            #aprovechar la info de maridaje si la hay
+            maridajes = [x[1:] for x in notadecata if "MARIDAJE" in x]
+            if maridajes:
+                 maridaje = ','.join(x for x in maridajes).split(":")[1]
+                
+        #los siguientes campos pueden obtenerse de dos formas distintas, por eso se almacenan primero en una variable que puede ser reescrita
+        wine['tipouvas'] = tipouvas#p. ej. la variable tipouvas puede haber sido reescrita en la nota de cata, o ser el valor que se obtuvo antes
+        wine['alcohol'] = graduacion
+        wine['maridaje'] = maridaje
         #...Añadir
         return wine
     
@@ -335,7 +351,7 @@ class uvinumSpider(scrapy.Spider):
 #             
 #             #item['cellar'] = item['cellar'].encode('utf-8')
 #             items.append(item)
-#         return items #yield?
+#         return items
 #     
 # #    def parseURL2(self, response):
 #         
