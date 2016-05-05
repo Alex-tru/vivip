@@ -1,0 +1,116 @@
+http://107.151.152.218:80
+http://50.16.130.96:80
+http://107.163.117.234:808
+http://107.151.152.210:80 
+http://107.163.117.116:808
+http://107.163.117.82:808
+http://134.249.168.16:80
+http://107.151.142.124:80
+http://81.21.77.150:8083
+http://23.96.16.185:80
+http://46.129.14.37:80
+http://117.135.250.134:8081
+http://117.135.251.135:84
+http://117.135.251.132:84
+http://117.135.251.134:81
+http://117.135.251.136:83
+http://117.135.251.133:84
+http://117.135.251.136:81
+http://117.135.251.134:80
+http://117.135.251.136:80
+http://117.135.250.133:8082
+http://117.135.251.133:80
+http://117.135.250.134:80
+http://117.135.251.135:82
+http://117.135.251.131:83
+http://117.135.251.133:83
+http://117.135.251.131:82
+http://117.135.251.134:84
+http://117.135.251.131:81
+http://117.135.250.134:8082
+http://120.198.233.211:80
+http://101.81.22.21:8118
+http://117.135.250.133:8081
+http://117.135.250.133:8083
+
+
+
+ 	flag China 	
+	
+	HTTP 	High +KA
+34secs 	123.77.8.14 	8118 	flag China 	
+	
+	HTTP 	High +KA
+34secs 	116.226.23.25 	8118 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.131 	80 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.133 	81 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.135 	83 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.134 	83 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.136 	84 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.133 	82 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.132 	83 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.132 	82 	flag China 	
+	
+	HTTP 	High +KA
+1min 	112.5.220.199 	80 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.134 	82 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.132 	81 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.131 	84 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.136 	82 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.135 	81 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.250.134 	8080 	flag China 	
+	
+	HTTP 	High +KA
+1min 	180.175.239.96 	8118 	flag China 	
+	
+	HTTP 	High +KA
+1min 	120.198.233.211 	8080 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.132 	80 	flag China 	
+	
+	HTTP 	High +KA
+1min 	117.135.251.135 	80 	flag China 	
+	
+	HTTP 	High +KA
+1min 	123.113.102.185 	8118 	flag China 	
+	
+	HTTP 	High +KA
+3mins 	58.40.82.214 	8118 	flag China 	
+	
+	HTTP 	High +KA
+15mins 	101.81.21.28 	8118 	flag China 	
+	
+	HTTP 	High +KA
+19mins 	123.232.10.238 	808 	flag China 	
+	
+	HTTP 	High +KA
+37mins 	222.39.64.13 	8118 	flag China
