@@ -1,5 +1,5 @@
- #!/usr/bin/python
- # -*- coding: utf-8 -*-
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import scrapy
 import math
 import os
@@ -16,15 +16,12 @@ class uvinumSpider(scrapy.Spider):
     allowed_domains = ["uvinum.es"]  
     
     proxy_pool = [
-        "http://50.16.130.96:80",
         "http://107.163.117.234:808",
         "http://107.151.152.210:80",
-        "http://107.163.117.116:808",
         "http://107.163.117.82:808",
         "http://134.249.168.16:80",
         "http://107.151.142.124:80",
         "http://81.21.77.150:8083",
-        "http://23.96.16.185:80",
         "http://46.129.14.37:80",
         "http://117.135.250.134:8081",
         "http://117.135.251.135:84",
@@ -48,10 +45,39 @@ class uvinumSpider(scrapy.Spider):
         "http://120.198.233.211:80",
         "http://101.81.22.21:8118",
         "http://117.135.250.133:8081",
-        "http://117.135.250.133:8083"
+        "http://117.135.250.133:8083",
+        "http://123.77.8.14:8118",
+        "http://116.226.23.25:8118",
+        "http://117.135.251.131:80",
+        "http://117.135.251.133:81",
+        "http://117.135.251.135:83",
+        "http://117.135.251.134:83",
+        "http://117.135.251.136:84",
+        "http://117.135.251.133:82",
+        "http://117.135.251.132:83",
+        "http://117.135.251.132:82",
+        "http://112.5.220.199:80",
+        "http://117.135.251.134:82",
+        "http://117.135.251.132:81",
+        "http://117.135.251.131:84",
+        "http://117.135.251.136:82",
+        "http://117.135.251.135:81",
+        "http://117.135.250.134:8080",
+        "http://180.175.239.96:8118",
+        "http://120.198.233.211:8080",
+        "http://117.135.251.132:80",
+        "http://117.135.251.135:80",
+        "http://123.113.102.185:8118",
+        "http://58.40.82.214:8118",
+        "http://101.81.21.28:8118",
+        "http://123.232.10.238:808",
+        "http://222.39.64.13:8118"
     ]
     
-    os.environ['http_proxy']=proxy_pool[random.randint(0,len(proxy_pool)-1)]
+    proxy = proxy_pool[random.randint(0,len(proxy_pool)-1)]
+    print proxy
+    os.environ['http_proxy'] = proxy
+    
     #url donde empieza a buscar
     start_urls = [
         "http://www.uvinum.es/denominaciones"
@@ -102,7 +128,7 @@ class uvinumSpider(scrapy.Spider):
         #urls = ['vino-rioja','vino-navarra']
         
         #hacer requests para las url de la lista de vinos con los filtros para cada region
-        for url in region_urls[128:129]:#iterando sobre las regiones
+        for url in region_urls[118:118+97]:#iterando sobre las regiones
             os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]   
             region = str(url)[21:]#cortar de cada url el nombre de la region
             #self.logger.debug('** Region %s **',region)
@@ -132,13 +158,56 @@ class uvinumSpider(scrapy.Spider):
         print region_name
         #self.logger.debug('** Region filter %s **', region_name)
         #print region_name
-        #obtner las urls de las paginas con filtro de region y año
-        year_urls = response.xpath('//div[@id="filter_vintage"]/ul/li/a/@href').extract()
         
-        for year_url in year_urls:
-            os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
-            if year_url!="#":# a veces en las url que coge hay un #, con este if evitamos que salte el error
-                yield scrapy.Request(year_url, callback=self.parseYear)
+        #si hay menos de 1200 vinos en esta region, ya vamos pagina por pagina sin poner mas filtros
+        N_vinos = int((response.xpath('//div[@class="sales-filters"]/em/text()').extract()[-1])[1:-1])
+        print N_vinos,"in this region"
+        with open("N_vins_per_regio.txt","a") as f:
+                f.write(str(N_vinos)+" en "+response.url+"\n")
+        if N_vinos < 1200:   
+            #y cuantas paginas, para poder buscar en ellas
+            N_pages = int(math.ceil(N_vinos/20.))
+            print "No extra filters needed, there are",N_pages,"pages"
+            wine_urls = response.xpath('//a[@class="name"]/@href').extract()#obtner las urls de cada vino
+        
+            #request individual para cada vino
+            for wine_url in wine_urls:
+                os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
+                #wine_url = "http://webcache.googleusercontent.com/search?q=cache:" + wine_url
+            
+                if wine_url!="#":
+                    yield scrapy.Request(wine_url, callback=self.parseDATA, meta = {
+                        'dont_redirect': True,
+                        'handle_httpstatus_list': [301]
+                      })
+            
+            #comprovar si hay mas paginas       
+            if (N_pages > 1):
+                print "There are more pages"
+                for x in xrange(N_pages-1):#para cada una de las siguientes paginas
+                    #añadir el numero de pagina a la url
+                    page_url = response.url +":"+str(x+2)
+                    print "I will go to page",x+2,": ",page_url
+                    #hacer la request para la url de esa pagina
+                    os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
+                    if page_url!="#":
+                        yield scrapy.Request(page_url, callback=self.parseType_extraPage, meta = {
+                                                                                                  'dont_redirect': True,
+                                                                                                  'handle_httpstatus_list': [301]
+                        })
+
+            
+        else:#si no, vamos a añadir mas filtros
+            #obtner las urls de las paginas con filtro de region y año
+            year_urls = response.xpath('//div[@id="filter_vintage"]/ul/li/a/@href').extract()
+        
+            for year_url in year_urls:
+                os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
+                if year_url!="#":# a veces en las url que coge hay un #, con este if evitamos que salte el error
+                    yield scrapy.Request(year_url, callback=self.parseYear, meta = {
+                        'dont_redirect': True,
+                        'handle_httpstatus_list': [301]
+                      })
         
 #         #crear lista con los años que hay y añadir el filtro de año a la url con filtro de tipo y region
 #         for year_url in year_urls:
@@ -183,7 +252,7 @@ class uvinumSpider(scrapy.Spider):
         
         #request individual para cada vino
         for wine_url in wine_urls:
-            #os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
+            os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
             #wine_url = "http://webcache.googleusercontent.com/search?q=cache:" + wine_url
             
             if wine_url!="#":
@@ -196,7 +265,7 @@ class uvinumSpider(scrapy.Spider):
         if (N_pages > 1):
             for x in xrange(N_pages-1):#para cada una de las siguientes paginas
                 #añadir el numero de pagina a la url
-                page_url = first_page + str(x+2)
+                page_url = first_page+":"+str(x+2)
                 #hacer la request para la url de esa pagina
                 os.environ['http_proxy']=self.proxy_pool[random.randint(0,len(self.proxy_pool)-1)]
                 if page_url!="#":
@@ -207,7 +276,7 @@ class uvinumSpider(scrapy.Spider):
                 
     def parseType_extraPage(self, response):    
         """parse para las siguientes paginas con filtro de año, region y tipo; en caso de haber mas de una."""  
-        print "I am in", response.url
+        print "I am in extra page", response.url
         
         wine_urls = response.xpath('//a[@class="name"]/@href').extract()#obtner las urls de cada vino
         
@@ -223,20 +292,20 @@ class uvinumSpider(scrapy.Spider):
             
     def parseDATA(self, response):
         """Obtener los datos de cada campo de interes para un vino."""
-        ### EN PROCESO ###
+        
         print "I am in", response.url
         wine = UvinumItem()
-        wine['name'] = ''.join(response.xpath('//div[@class="product-title"]/h1/@title').extract())
+        wine['nombre_del_vino'] = ''.join(response.xpath('//div[@class="product-title"]/h1/@title').extract()).replace("\n","")#quitamos los saltos de linea
         product = response.xpath('//div[@class="attributes-container"]')
-        wine['cellar'] = ''.join(product.xpath('.//a[@class="bodegas"]/@title').extract())
-        wine['tipo'] = ''.join(product.xpath('.//dl[@class="wine-type"]/dd/strong/text()').extract())
-        wine['anada'] = ''.join(product.xpath('.//dd[@class="anadas"]/strong/text()').extract())
-        wine['DO'] = ''.join(product.xpath('.//dl[@class="appellation"]/dd/a/text()').extract_first())
-        wine['volumen'] = ''.join(product.xpath('.//dd[@class="tamanos"]/strong/text()').extract())
+        wine['bodega'] = ''.join(product.xpath('.//a[@class="bodegas"]/@title').extract()).replace("\n","")
+        wine['tipo'] = ''.join(product.xpath('.//dl[@class="wine-type"]/dd/strong/text()').extract()).replace("\n","")
+        wine['anada'] = ''.join(product.xpath('.//dd[@class="anadas"]/strong/text()').extract()).replace("\n","")
+        wine['DO'] = ''.join(product.xpath('.//dl[@class="appellation"]/dd/a/text()').extract_first()).replace("\n","")
+        wine['volumen'] = ''.join(product.xpath('.//dd[@class="tamanos"]/strong/text()').extract()).replace("\n","")
         #para evitar el problema del acento en alérgenos usamos una lista de nodos con condición de que lo que se
         #extraiga del nodo contenga "genos" y por lo tanto sea Alérgenos
-        wine['alergenos'] = [x for x in product.xpath('.//dl') if "genos" in x.extract()][0].xpath('.//dd/text()').extract()
-        wine['precio'] = response.xpath('//span[@itemprop="price"]/text()').extract_first()
+        wine['alergenos'] = [x for x in product.xpath('.//dl') if "genos" in x.extract()][0].xpath('.//dd/text()').extract().replace("\n","")
+        wine['precio'] = response.xpath('//span[@itemprop="price"]/text()').extract_first().replace("\n","")
 #        wine['tipouvas'] = product.xpath('//p[@itemprop="description"]').extract()
 #         if wine['tipouvas']!=[]:
 #             if "UVAS" in wine['tipouvas'][0]:
@@ -246,19 +315,23 @@ class uvinumSpider(scrapy.Spider):
 #         else: wine['tipouvas'] = product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract()
         tipouvas = ''.join(product.xpath('.//dt[@title="Uvas"]/../dd/a/strong/text()').extract())
         graduacion = ''.join(product.xpath('.//dt[@title="Vol. de alcohol"]/../dd/text()').extract())
-        wine['puntuacionrp'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_pk guide"]/text()').extract())
-        wine['puntuacionws'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_ws guide"]/text()').extract())
-        wine['puntuacionrvf'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_larvf guide"]/text()').extract())
-        wine['puntuaciongp'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_p guide"]/text()').extract())
-        wine['notausuarios'] = ''.join(response.xpath('//div[@class="nota"]/p/strong[@itemprop="ratingValue"]/text()').extract())
-        wine['numerovotos'] = ''.join(response.xpath('//div[@class="nota"]/meta[@itemprop="reviewCount"]/@content').extract())
+        wine['puntuacionrp'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_pk guide"]/text()').extract()).replace("\n","")
+        wine['puntuacionws'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_ws guide"]/text()').extract()).replace("\n","")
+        wine['puntuacionrvf'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_larvf guide"]/text()').extract()).replace("\n","")
+        wine['puntuaciongp'] = ''.join(product.xpath('//dd[@class="guides"]/span[@class="guia_p guide"]/text()').extract()).replace("\n","")
+        wine['nota_usuarios'] = ''.join(response.xpath('//div[@class="nota"]/p/strong[@itemprop="ratingValue"]/text()').extract()).replace("\n","")
+        wine['numero_usuarios'] = ''.join(response.xpath('//div[@class="nota"]/meta[@itemprop="reviewCount"]/@content').extract()).replace("\n","")
         maridaje = ','.join(product.xpath('.//dl[@class="pairing"]/dd/a/strong/text()').extract())
+        tempconsumo = ''.join(product.xpath('.//dt[@title="Temp. de consumo"]/../dd/text()').extract())
         
         notadecata = product.xpath('//p[@itemprop="description"]/text()').extract()
         #procesar la nota de cata:
         if notadecata:#los saltos de linea hacen que extract() obtenga cada parte de la nota de cata como un elemento de una lista
             notas = [x[3:] for x in notadecata if ("Vista" in x or "Nariz" in x or "Boca" in x)]#y cogemos los elementos de la lista que queramos
-            wine['notadecata'] = ''.join(x for x in notas)
+            if not notas:
+                if ''.join(notadecata)[:12]=="NOTA DE CATA":#si la nota no esta en el formato Vista-Nariz-Boca, lo intentamos de nuevo
+                    notas = ''.join(notadecata).split('\n')[1]
+            wine['nota_de_cata'] = (''.join(x for x in notas)).replace("\n","")
             
             #aprovechar la info de porcentajes de uva si la hay
             uvas = [x[1:] for x in notadecata if "UVAS" in x]#cogemos solo la parte de uvas
@@ -272,119 +345,27 @@ class uvinumSpider(scrapy.Spider):
             #aprovechar la info de temperatura de consumo si la hay
             tconsumo = [x[1:] for x in notadecata if "TEMPERATURA DE CONSUMO" in x]
             if tconsumo:
-                wine['temperaturaconsumo'] = ''.join(x for x in tconsumo).split(":")[1]
+                tempconsumo = ''.join(x for x in tconsumo).split(":")[1]
                 
             #aprovechar la info de maridaje si la hay
             maridajes = [x[1:] for x in notadecata if "MARIDAJE" in x]
             if maridajes:
-                 maridaje = ','.join(x for x in maridajes).split(":")[1]
+                maridaje = ','.join(x for x in maridajes).split(":")[1]
+            
+            #del envejecimiento o crianza    
+            tipodecrianza = [x[1:] for x in notadecata if("ENVEJECIMIENTO" in x or "PERMANENCIA EN BARRICA" in x)]
+            if tipodecrianza:
+                wine['tipo_de_crianza'] = ''.join(x for x in tipodecrianza).split(":")[1].replace("\n","")
                 
         #los siguientes campos pueden obtenerse de dos formas distintas, por eso se almacenan primero en una variable que puede ser reescrita
-        wine['tipouvas'] = tipouvas#p. ej. la variable tipouvas puede haber sido reescrita en la nota de cata, o ser el valor que se obtuvo antes
-        wine['alcohol'] = graduacion
-        wine['maridaje'] = maridaje
-        #...Añadir
+        wine['tipo_de_uvas'] = tipouvas.replace("\n","")#p. ej. la variable tipouvas puede haber sido reescrita en la nota de cata, o ser el valor que se obtuvo antes
+        wine['alcohol'] = graduacion.replace("\n","")
+        wine['maridaje'] = maridaje.replace("\n","")
+        wine['temperatura_de_consumo'] = tempconsumo.replace("\n","")
+        
+        #las fotos
+        wine['image_urls'] = response.xpath('//a[@id="fancy_photo"]/@href').extract()
+   
+        with open("urls.txt","a") as f:
+            f.write(response.url+"\n")
         return wine
-    
-    
-# #    def parseDO(self, response):
-#         
-#         self.logger.debug('** DO url %s **',response.url)
-#         
-#         arrows = response.xpath('//a[@class="arrows"]/@href').extract();
-#         
-#         if len(arrows) > 0:
-#             lastPage = arrows[len(arrows)-1]
-#             self.logger.debug('** last page for DO %s **',lastPage)
-#             
-#             exitCondition = True
-#             index = 1;
-#             while exitCondition:
-#                 
-#                 url = response.url+":"+ str(index)
-#                 self.logger.debug('** scrap URL %s',url)
-#                 yield scrapy.Request(url, callback=self.parseURL,meta = {
-#                   'dont_redirect': True,
-#                   'handle_httpstatus_list': [301]
-#               }) 
-#                 
-#                 index = index + 1
-#                 if index > 60:
-#                     self.logger.warning('** More than 60 pages for DO %s',response.url)
-#                 if url == lastPage:
-#                     exitCondition = False
-#                 else:
-#                     exitCondition = True
-#                 
-#         else:
-#             self.logger.debug('** No pagination for DO %s ',response.url)
-#             
-#             yield scrapy.Request(response.url, callback=self.parseURL,meta = {
-#                   'dont_redirect': True,
-#                   'handle_httpstatus_list': [301]
-#               }, dont_filter=True) 
-#         
-#         
-# #nada
-#     
-# #    def parseURL(self, response):
-#         
-# 
-#             
-#         self.logger.info('** Init parseURL1 %s **',response.url)    
-#             
-#         #hxs = Selector(response)
-#         products = response.xpath('//li[@class="data-product result result-with-button"]')
-#         #products = hxs.xpath('///html/body/div[2]/div[3]/div[3]/div[3]/div[2]/ul/li[2]')
-#         products = products + response.xpath('//li[@class="data-product result"]')
-#         
-#         items = []
-#         for product in products:
-#             item = UvinumItem()
-#             item['cellar'] = product.xpath('@data-cellar').extract()
-#             item['store'] = product.xpath('@data-store').extract()
-#             item['category'] = product.xpath('@data-category').extract()
-#             item['name'] = product.xpath('@data-name').extract()
-#             item['source'] = product.xpath('@data-store').extract()
-#             item['precio'] = product.xpath('normalize-space(.//*[@class="precio"]/text())').extract()
-#             item['puntuacion'] = product.xpath('normalize-space(.//*[@class="nota"]/strong)').extract()
-#             
-#             #item['cellar'] = item['cellar'].encode('utf-8')
-#             items.append(item)
-#         return items
-#     
-# #    def parseURL2(self, response):
-#         
-#         self.logger.info('** Init parseURL2 %s **',response.url)    
-#             
-#         item = UvinumItem()
-#         #xpath() devuelve selectores (nodos) seleccionados segun su argumento
-#         #sobre los selectores se puede llamar xpath() otra vez
-#         #extract() devuelve los datos de los selectores
-#         item['name'] = response.xpath('normalize-space(.//*[@class="url"]/strong/text())').extract()
-#         item['anada'] = response.xpath('normalize-space(.//*[@class="anadas"]/strong)').extract()
-#         item['cellar'] = response.xpath('normalize-space(.//*[@class="maker"]/text())').extract()
-#         item['DO'] = response.xpath('normalize-space(.//*[@class="appellation"]/dd/a/text())').extract()
-#         item['tipo'] = response.xpath('normalize-space(.//*[@class="wine-type"]/dd/strong/text())').extract()
-#         item['volumen'] = response.xpath('normalize-space(.//*[@class="tamanos"]/strong/text())').extract()
-#         item['textogeneral'] = response.xpath('.//*[@class="maker-description"]').xpath('normalize-space(.//*[@itemprop])').extract()
-#         #item['tipouvas'] = 
-#         #item['alcohol'] = 
-#         #item['notadecata'] =
-#         item['notausuarios'] = response.xpath('normalize-space(.//*[@class="nota"]/strong)').extract()
-#         item['alcohol'] = response.xpath('.//*[@class="attribute" and @title="Vol. de alcohol"]/following-sibling::dd[1]/text()').extract()
-#         item['alergenos'] = response.xpath('.//*[@class="attribute" and @title="Alérgenos"]/following-sibling::dd[1]/text()').extract()
-#         item['precio'] = response.xpath('normalize-space(.//*[@class="price"]/text())').extract()
-#         item['store'] = response.xpath('normalize-space(.//*[@class="shipping_info"]/span/a/strong/text())').extract()
-#         item['puntuacionrp'] = response.xpath('normalize-space(.//*[@class="guia_pk guide"]/text())').extract()
-#         item['puntuaciongp'] = response.xpath('normalize-space(.//*[@class="guia_p guide"]/text())').extract()
-#         #item['']
-#         
-#         #primero = response.xpath('.//*[@class="maker-description"]').xpath('normalize-space(.//*[@itemprop])').extract()[0].split(':')
-#         #tercero = response.xpath('.//*[@class="maker-description"]').xpath('normalize-space(.//*[@itemprop])').extract()[0].split('-')
-#         #item['tipouvas'] = primero[6].split('.')[0].split(' ')[1]
-#         #item['alcohol'] = primero[7].split(' ')[1]
-#         #item['notadecata'] =tercero[1]+tercero[2]+tercero[3].split('.')[0]
-#             
-#         return item
-#             
